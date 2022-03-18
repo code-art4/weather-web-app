@@ -95,3 +95,18 @@ h1 {
 .bold {
     font-weight: 700;
 }
+
+.loading {
+    width: max-content;
+    margin: auto;
+}
+
+.error {
+    color: red;
+    width: max-content;
+    margin: auto
+}
+
+.modal-body p {
+    font-size: 17px
+}
