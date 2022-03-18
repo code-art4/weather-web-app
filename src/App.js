@@ -39,7 +39,7 @@ function App() {
           placeholder='Enter Location'
         />
       </div>
-      <div className='container'>
+      <div className='location-container'>
         <div className='top'>
           <div className='location'>
             <p>{data.name}</p>
