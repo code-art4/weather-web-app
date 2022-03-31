@@ -61,6 +61,7 @@ function App() {
     axios
       .get(url)
       .then((response) => {
+        setErrorMessage('');
         // console.log(response.data.list[0].dt_txt);
         const filtered = response.data.list;
         const d = [];
@@ -158,9 +159,9 @@ function App() {
             </div>
           ) : null}
           {dt === 'error' ? <p className='error'>An error occurred</p> : null}
-          {errorMessage ? (
+          {/* {errorMessage ? (
             <p className='error error-sm'>{errorMessage}</p>
-          ) : null}
+          ) : null} */}
         </div>
 
         {dt && dt[0] && dt[0].main && (
