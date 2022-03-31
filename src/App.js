@@ -1,101 +1,90 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Spinner from "react-spinkit";
-import { Modal } from 'react-bootstrap';
-
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
-  const [data, setData] = useState([])
-  const [location, setLocation] = useState("");
+  const [data, setData] = useState([]);
+
+  const [location, setLocation] = useState('');
+
+  // the url
   const [url, seturl] = useState(process.env.REACT_APP_WEATHER_URL);
   const [show, setShow] = useState(false);
+
+  // error message for turning off the location
   const [errorMessage, setErrorMessage] = useState(false);
-  //by default Lagos
-  const [country, setCountry] = useState()
+
+  //by default Lagos is the environment variable location with finding the location of the user
+  const [country, setCountry] = useState();
   const togglePopup = () => setShow(!show);
 
   //to use the user location
-  const [geoPosition, setGeoPosition] = useState()
-  
-  // const url = process.env.REACT_APP_WEATHER_URL;
-  
-  // const url = process.env.REACT_APP_BASE_URL.replace('location', location);
-  
-  // const searchLocation = (event) => {
-  //   if(event.key === 'Enter'){
-  //     setData('loading');
-  //     axios.get(url).then((response) => {
-  //     setData(response.data);
-  //   }).catch(setData('error'))
-  //   setLocation('')
-  //   }
-  // }
+  const [geoPosition, setGeoPosition] = useState();
 
-  useEffect(() => {
-    togglePopup();
-  }, [])
-
-
+  //change location handler
   const changeLocation = (e) => {
     seturl(process.env.REACT_APP_WEATHER_URL.replace('Lagos', e.target.value));
     setErrorMessage('Please put off your location');
   };
 
-
+  //for finding the user location
   var options = {
     enableHighAccuracy: true,
     timeout: 5000,
     maximumAge: 0,
   };
-  
+
+  // success function of geoPosition api
   function success(pos) {
     var crd = pos.coords;
-    
+
     console.log('Your current position is:');
-    
+
     let geoPositionURL = process.env.REACT_APP_WEATHER_URL_GEOPOSITION.replace(
       '{lat}',
       crd.latitude
     );
-    geoPositionURL = geoPositionURL.replace(
-      '{lon}',
-      crd.longitude
-      );
-      seturl(geoPositionURL)
-    
+    geoPositionURL = geoPositionURL.replace('{lon}', crd.longitude);
+    seturl(geoPositionURL);
+
     console.log(`Latitude : ${crd.latitude}`);
     console.log(`Longitude: ${crd.longitude}`);
     console.log(`More or less ${crd.accuracy} meters.`);
   }
 
+  // error function of geoPosition api
   function error(err) {
     console.warn(`ERROR(${err.code}): ${err.message}`);
   }
-  
 
   useEffect(() => {
-     axios
+    axios
       .get(url)
       .then((response) => {
         // console.log(response.data.list[0].dt_txt);
-        const filtered = response.data.list;     
+        const filtered = response.data.list;
         const d = [];
-        const a = filtered.map(el => {          
-          return {...el, dt_txt: el.dt_txt.replace(el.dt_txt, new Date(el.dt_txt).getDay())};          
-        })
-        setData(a);       
-        setCountry(response.data.city.name)   
-      }).catch(setData('error'))
+        const a = filtered.map((el) => {
+          return {
+            ...el,
+            dt_txt: el.dt_txt.replace(el.dt_txt, new Date(el.dt_txt).getDay()),
+          };
+        });
+        setData(a);
+        setCountry(response.data.city.name);
+      })
+      .catch(setData('error'));
     setLocation('');
-    
-  },[url])
+  }, [url]);
 
+  // finding the current location of the user
   useEffect(() => {
     const n = navigator.geolocation.getCurrentPosition(success, error, options);
     console.log(n);
-  }, [])
+  }, []);
 
+
+  // day of the week for comparing the number gotten from the api to the day it is meant for
   const dayOfWeek = (dayNumber) => {
     const weekdays = [
       'Sunday',
@@ -108,18 +97,25 @@ function App() {
     ];
     const x = Number(dayNumber);
     return weekdays[x];
-  }
+  };
 
+  //for removing the excessive number of data
   const getUnique = (arr, comp) => {
-    return arr.map(el => el[comp]).map((e, i, final) => final.indexOf(e) === i && i).filter(e => arr[e]).map(e => arr[e])
-  }
+    return arr
+      .map((el) => el[comp])
+      .map((e, i, final) => final.indexOf(e) === i && i)
+      .filter((e) => arr[e])
+      .map((e) => arr[e]);
+  };
 
-let dt =
-  data &&
-  data[data.length - 1] &&
-  data[data.length - 1].dt_txt &&
-  getUnique(data, 'dt_txt');
+  let dt =
+    data &&
+    data[data.length - 1] &&
+    data[data.length - 1].dt_txt &&
+    getUnique(data, 'dt_txt');
 
+
+    // for sorting out from the closest day (today) to 5 days time ascendingly
   dt =
     data &&
     data[data.length - 1] &&
@@ -149,7 +145,6 @@ let dt =
             </select>
           </div>
           <div className='temp'>
-            {/* data[0].main.temp.toFixed() */}
             {dt && dt && dt[0] && dt[0].main ? (
               <h1>{dt[0].main.temp.toFixed()}&deg;F</h1>
             ) : null}
@@ -163,7 +158,9 @@ let dt =
             </div>
           ) : null}
           {dt === 'error' ? <p className='error'>An error occurred</p> : null}
-          {errorMessage ? <p className='error error-sm'>{errorMessage}</p> : null}
+          {errorMessage ? (
+            <p className='error error-sm'>{errorMessage}</p>
+          ) : null}
         </div>
 
         {dt && dt[0] && dt[0].main && (
