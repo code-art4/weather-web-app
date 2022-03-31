@@ -6,10 +6,12 @@ import { Modal } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
-  const [data, setData] = useState({})
+  const [data, setData] = useState([])
   const [location, setLocation] = useState("");
   const [show, setShow] = useState(false);
   const togglePopup = () => setShow(!show);
+
+  const info = process.env.REACT_APP_WEATHER_URL;
 
   const url = process.env.REACT_APP_BASE_URL.replace('location', location);
 
@@ -28,77 +30,100 @@ function App() {
     togglePopup();
   }, [])
 
+  useEffect(() => {
+     axios
+      .get(info)
+      .then((response) => {
+        // console.log(response.data.list[0].dt_txt);
+        const filtered = response.data.list;     
+        const d = [];
+        const a = filtered.map(el => {          
+          return {...el, dt_txt: el.dt_txt.replace(el.dt_txt, new Date(el.dt_txt).getDay())};          
+        })
+        setData(a);          
+      }).catch(setData('error'))
+    setLocation('')
+  },[])
+
+  const dayOfWeek = (dayNumber) => {
+    const weekdays = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    const x = Number(dayNumber);
+    return weekdays[x];
+  }
+
+  const getUnique = (arr, comp) => {
+    return arr.map(el => el[comp]).map((e, i, final) => final.indexOf(e) === i && i).filter(e => arr[e]).map(e => arr[e])
+  }
+
+let dt =
+  data &&
+  data[data.length - 1] &&
+  data[data.length - 1].dt_txt &&
+  getUnique(data, 'dt_txt');
+
+  dt =
+    data &&
+    data[data.length - 1] &&
+    data[data.length - 1].dt_txt &&
+    dt.sort(function (a, b) {
+      return a.dt - b.dt;
+    });
+
+  console.log(dt)
+
   return (
-    <div className='app'>      
-      <div className='search'>
-        <input
-          type='text'
-          value={location}
-          onChange={(event) => setLocation(event.target.value)}
-          onKeyDownCapture={searchLocation}
-          placeholder='Enter Location'
-        />
-      </div>
+    <div className='app'>
+      <p>&lt;</p>
       <div className='location-container'>
         <div className='top'>
           <div className='location'>
-            <p>{data.name}</p>
+            <p>Lagos</p>
           </div>
           <div className='temp'>
-            {data.main ? <h1>{data.main.temp.toFixed()}&deg;F</h1> : null}
+            {/* data[0].main.temp.toFixed() */}
+            {dt && dt && dt[0] && dt[0].main ? (
+              <h1>{dt[0].main.temp.toFixed()}&deg;F</h1>
+            ) : null}
             <div className='description'>
-              {!!data.weather && <p>{data.weather[0].main}</p>}
+              {!!data.weather && <p>{}</p>}Today
             </div>
           </div>
-          {data === 'loading' ? (
+          {dt === 'loading' ? (
             <div className='loading'>
               <Spinner name='folding-cube' color='blue' />
             </div>
           ) : null}
-          {data === 'error' ? (
-            <p className='error'>The inputted location doesn't exist</p>
-          ) : null}
+          {dt === 'error' ? <p className='error'>An error occurred</p> : null}
         </div>
 
-        {data.name !== undefined ? (
+        {dt && dt[0] && dt[0].main && (
           <div className='bottom'>
-            <div className='feels'>
-              {data.main ? (
-                <p className='bold'>{data.main.feels_like.toFixed()}&deg;F</p>
-              ) : null}
-              <p>Feels like</p>
-            </div>
+            {dt.slice(1, 5).map((elmt) => (
+              <div className='feels'>
+                <div className='feels' key={elmt.dt}>
+                  <p>{dayOfWeek(elmt.dt_txt)}</p>
+                  <p className='bold'>{elmt.main.temp.toFixed()}&deg;F</p>
+                </div>
+              </div>
+            ))}
 
-            <div className='humidity'>
-              {data.main ? <p className='bold'>{data.main.humidity}%</p> : null}
-              <p>Humidity</p>
-            </div>
-
-            <div className='wind'>
-              {data.wind ? <p className='bold'>{data.wind.speed}MPH</p> : null}
-              <p>Wind Speed</p>
-            </div>
+            {data.map((el) => {
+              if (new Date(el.dt_txt).getDay()) {
+                console.log();
+              }
+            })}
           </div>
-        ) : null}
+        )}
       </div>
-
-      <Modal
-        show={show}
-        onHide={() => setShow(false)}
-        dialogClassName='modal-90w'
-        aria-labelledby='example-custom-modal-styling-title'
-      >
-        <Modal.Header closeButton>
-          <Modal.Title id='example-custom-modal-styling-title'>
-            Weather app
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <p>
-            This page has an input where location is inputted to see the weather of a the location and if the location doesn't exist, an error would appear so you can input the location correctly
-          </p>
-        </Modal.Body>
-      </Modal>
+      <p>&gt;</p>
     </div>
   );
 }
