@@ -8,31 +8,75 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function App() {
   const [data, setData] = useState([])
   const [location, setLocation] = useState("");
+  const [url, seturl] = useState(process.env.REACT_APP_WEATHER_URL);
   const [show, setShow] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(false);
+  //by default Lagos
+  const [country, setCountry] = useState()
   const togglePopup = () => setShow(!show);
 
-  const info = process.env.REACT_APP_WEATHER_URL;
-
-  const url = process.env.REACT_APP_BASE_URL.replace('location', location);
-
-  const searchLocation = (event) => {
-    if(event.key === 'Enter'){
-      setData('loading');
-      axios.get(url).then((response) => {
-      setData(response.data);
-      // console.log(response.data);
-    }).catch(setData('error'))
-    setLocation('')
-    }
-  }
+  //to use the user location
+  const [geoPosition, setGeoPosition] = useState()
+  
+  // const url = process.env.REACT_APP_WEATHER_URL;
+  
+  // const url = process.env.REACT_APP_BASE_URL.replace('location', location);
+  
+  // const searchLocation = (event) => {
+  //   if(event.key === 'Enter'){
+  //     setData('loading');
+  //     axios.get(url).then((response) => {
+  //     setData(response.data);
+  //   }).catch(setData('error'))
+  //   setLocation('')
+  //   }
+  // }
 
   useEffect(() => {
     togglePopup();
   }, [])
 
+
+  const changeLocation = (e) => {
+    seturl(process.env.REACT_APP_WEATHER_URL.replace('Lagos', e.target.value));
+    setErrorMessage('Please put off your location');
+  };
+
+
+  var options = {
+    enableHighAccuracy: true,
+    timeout: 5000,
+    maximumAge: 0,
+  };
+  
+  function success(pos) {
+    var crd = pos.coords;
+    
+    console.log('Your current position is:');
+    
+    let geoPositionURL = process.env.REACT_APP_WEATHER_URL_GEOPOSITION.replace(
+      '{lat}',
+      crd.latitude
+    );
+    geoPositionURL = geoPositionURL.replace(
+      '{lon}',
+      crd.longitude
+      );
+      seturl(geoPositionURL)
+    
+    console.log(`Latitude : ${crd.latitude}`);
+    console.log(`Longitude: ${crd.longitude}`);
+    console.log(`More or less ${crd.accuracy} meters.`);
+  }
+
+  function error(err) {
+    console.warn(`ERROR(${err.code}): ${err.message}`);
+  }
+  
+
   useEffect(() => {
      axios
-      .get(info)
+      .get(url)
       .then((response) => {
         // console.log(response.data.list[0].dt_txt);
         const filtered = response.data.list;     
@@ -40,10 +84,17 @@ function App() {
         const a = filtered.map(el => {          
           return {...el, dt_txt: el.dt_txt.replace(el.dt_txt, new Date(el.dt_txt).getDay())};          
         })
-        setData(a);          
+        setData(a);       
+        setCountry(response.data.city.name)   
       }).catch(setData('error'))
-    setLocation('')
-  },[])
+    setLocation('');
+    
+  },[url])
+
+  useEffect(() => {
+    const n = navigator.geolocation.getCurrentPosition(success, error, options);
+    console.log(n);
+  }, [])
 
   const dayOfWeek = (dayNumber) => {
     const weekdays = [
@@ -77,15 +128,25 @@ let dt =
       return a.dt - b.dt;
     });
 
-  console.log(dt)
-
   return (
     <div className='app'>
-      <p>&lt;</p>
       <div className='location-container'>
         <div className='top'>
           <div className='location'>
-            <p>Lagos</p>
+            <p>{country}</p>
+            <p className='change'>Change location</p>
+            <select
+              name='location'
+              id='location'
+              className='select'
+              onClick={changeLocation}
+            >
+              <option value='Lagos'>Lagos</option>
+              <option value='Abuja'>Abuja</option>
+              <option value='London'>London</option>
+              <option value='Los Angeles'>Los Angeles</option>
+              <option value='Paris'>Paris</option>
+            </select>
           </div>
           <div className='temp'>
             {/* data[0].main.temp.toFixed() */}
@@ -102,28 +163,22 @@ let dt =
             </div>
           ) : null}
           {dt === 'error' ? <p className='error'>An error occurred</p> : null}
+          {errorMessage ? <p className='error error-sm'>{errorMessage}</p> : null}
         </div>
 
         {dt && dt[0] && dt[0].main && (
           <div className='bottom'>
             {dt.slice(1, 5).map((elmt) => (
-              <div className='feels'>
-                <div className='feels' key={elmt.dt}>
+              <div className='feels' key={elmt.dt}>
+                <div className='feels'>
                   <p>{dayOfWeek(elmt.dt_txt)}</p>
                   <p className='bold'>{elmt.main.temp.toFixed()}&deg;F</p>
                 </div>
               </div>
             ))}
-
-            {data.map((el) => {
-              if (new Date(el.dt_txt).getDay()) {
-                console.log();
-              }
-            })}
           </div>
         )}
       </div>
-      <p>&gt;</p>
     </div>
   );
 }
