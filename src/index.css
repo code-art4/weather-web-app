@@ -100,7 +100,7 @@ h1 {
         gap: 2rem
     }
     .description {
-        transform: rotate(269deg) translateX(-1rem)
+        transform: rotate(269deg) translateX(-1rem) !important
     }
 }
 
